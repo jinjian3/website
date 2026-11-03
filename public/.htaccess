@@ -1,0 +1,13 @@
+# 禁止直接访问配置和日志
+<FilesMatch "^(contact-config\.php|contact-debug\.log)$">
+  Require all denied
+</FilesMatch>
+ErrorDocument 404 /404.html
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>

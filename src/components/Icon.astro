@@ -1,0 +1,21 @@
+---
+import { siFacebook, siX, siInstagram, siSinaweibo } from 'simple-icons';
+const { name, size = 20 } = Astro.props;
+// 24x24 viewBox 的图标路径
+const paths: Record<string, string> = {
+  facebook: siFacebook.path, twitter: siX.path, instagram: siInstagram.path, weibo: siSinaweibo.path,
+  email: 'M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.6 2L12 12.6 19.4 7H4.6zM4 9.2V17h16V9.2l-8 6-8-6z',
+  down: 'M4.2 8.2 12 16l7.8-7.8-1.6-1.6L12 12.8 5.8 6.6z',
+  up: 'M19.8 15.8 12 8l-7.8 7.8 1.6 1.6 6.2-6.2 6.2 6.2z',
+  left: 'M15.8 4.2 8 12l7.8 7.8 1.6-1.6L11.2 12l6.2-6.2z',
+  right: 'M8.2 4.2 6.6 5.8 12.8 12l-6.2 6.2 1.6 1.6L16 12z',
+  share: 'M14 4v4.5C8 9.3 4.7 12.6 4 19c2.4-3.4 5.4-4.8 10-4.9V19l7-7.5z',
+  download: 'M11 3h2v9.2l3.3-3.3 1.4 1.4L12 16l-5.7-5.7 1.4-1.4 3.3 3.3zM5 18h14v2H5z',
+  play: 'M8 5v14l11-7z',
+  pause: 'M6 5h4v14H6zm8 0h4v14h-4z',
+  menu: 'M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z',
+  close: 'M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z',
+  check: 'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
+};
+---
+<svg class="icon" viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true"><path d={paths[name]} /></svg>

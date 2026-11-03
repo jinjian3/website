@@ -1,0 +1,152 @@
+---
+import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import Socials from '../components/Socials.astro';
+import ContactForm from '../components/ContactForm.astro';
+import { site, galleries, posts, url, fullUrl } from '../lib/data';
+
+interface Props {
+  title?: string;
+  description?: string;
+  mode?: 'home' | 'contact' | 'page';
+  section?: 'home' | 'gallery' | 'blog' | 'contact';
+  current?: string;       // 当前相册/文章 slug，用于高亮子菜单
+  prev?: { href: string; label: string } | null;
+  next?: { href: string; label: string } | null;
+  share?: boolean;
+  ogImage?: string;
+}
+const { title, description = '', mode = 'page', section, current, prev = null, next = null, share = false, ogImage } = Astro.props;
+const pageTitle = title ? `${title} · ${site.title}` : site.title;
+const lang = site.language ?? 'zh-CN';
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={fullUrl(ogImage)} />}
+    <meta name="theme-color" content="#ff6347" />
+    <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
+  </head>
+  <body class={`is-${mode}`}>
+    <header class="site-header">
+      <a class="logo" href={url()}>{site.title}</a>
+      <button class="nav-toggle" aria-label="菜单" aria-expanded="false" data-nav-toggle><Icon name="menu" size={26} /></button>
+      <div class="nav-wrap">
+        <nav class="main-nav" aria-label="主菜单">
+          <ul>
+            <li class:list={[section === 'home' && 'active']}><a href={url()}>Home</a></li>
+            <li class:list={['has-sub', section === 'gallery' && 'active']}>
+              <a href={url('gallery/')} data-parent>Gallery</a>
+              <ul class="sub">
+                {galleries.map((g) => (
+                  <li class:list={[current === g.slug && section === 'gallery' && 'current']}><a href={url(`gallery/${g.slug}/`)}>{g.title}</a></li>
+                ))}
+              </ul>
+            </li>
+            <li class:list={['has-sub', section === 'blog' && 'active']}>
+              <a href={url('blog/')} data-parent>Blog</a>
+              <ul class="sub">
+                {posts.map((p) => (
+                  <li class:list={[current === p.slug && section === 'blog' && 'current']}><a href={url(`blog/${p.slug}/`)}>{p.title}</a></li>
+                ))}
+              </ul>
+            </li>
+            <li class:list={['has-sub', section === 'contact' && 'active']}>
+              <a href={url('contact/')} data-parent>Contact</a>
+              <div class="sub sub-contact">
+                <ContactForm id="nav" />
+                <Socials />
+              </div>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <slot />
+
+    {share && <button class="float-btn share" aria-label="分享" data-share><Icon name="share" size={22} /></button>}
+    {prev && <a class="side-btn prev" href={prev.href} aria-label={prev.label} title={prev.label}><Icon name="left" size={22} /></a>}
+    {next && <a class="side-btn next" href={next.href} aria-label={next.label} title={next.label}><Icon name="right" size={22} /></a>}
+    {mode !== 'home' && <button class="float-btn top" aria-label="回到顶部" data-top><Icon name="up" size={22} /></button>}
+    <div class="toast" data-toast></div>
+
+    <footer class="site-footer">
+      <button class="to-top" aria-label="回到顶部" data-top><Icon name="up" size={20} /></button>
+      <Socials />
+      <p>© {new Date().getFullYear()} {site.title}</p>
+    </footer>
+
+    <script>
+      const body = document.body;
+      // 手机菜单
+      const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+      toggle?.addEventListener('click', () => {
+        const open = body.classList.toggle('nav-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      // 手机上点击带子菜单的项目：第一次展开，不跳转
+      const mobile = () => window.matchMedia('(max-width: 899px)').matches;
+      document.querySelectorAll<HTMLAnchorElement>('.has-sub > a').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          if (!mobile()) return;
+          const li = a.parentElement!;
+          if (!li.classList.contains('open')) {
+            e.preventDefault();
+            document.querySelectorAll('.has-sub.open').forEach((x) => x.classList.remove('open'));
+            li.classList.add('open');
+          }
+        });
+      });
+      // 回到顶部
+      const tops = document.querySelectorAll<HTMLElement>('[data-top]');
+      tops.forEach((b) => b.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' })));
+      const topBtn = document.querySelector<HTMLElement>('.float-btn.top');
+      const onScroll = () => topBtn?.classList.toggle('show', window.scrollY > 500);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      // 提示条
+      const toast = document.querySelector<HTMLElement>('[data-toast]')!;
+      let tt: number;
+      (window as any).toast = (msg: string) => {
+        toast.textContent = msg; toast.classList.add('show');
+        clearTimeout(tt); tt = window.setTimeout(() => toast.classList.remove('show'), 2200);
+      };
+      // 分享：优先系统分享面板，否则复制链接
+      document.querySelector('[data-share]')?.addEventListener('click', async () => {
+        const data = { title: document.title, url: location.href };
+        try {
+          if (navigator.share) { await navigator.share(data); return; }
+          await navigator.clipboard.writeText(location.href);
+          (window as any).toast('链接已复制');
+        } catch { /* 用户取消 */ }
+      });
+      // 联系表单
+      const started = Date.now();
+      document.querySelectorAll<HTMLFormElement>('form[data-contact]').forEach((form) => {
+        const status = form.querySelector<HTMLElement>('.form-status')!;
+        const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          status.className = 'form-status';
+          if (!form.checkValidity()) { status.textContent = '请填写姓名、有效邮箱和内容'; status.classList.add('err'); form.reportValidity(); return; }
+          (form.elements.namedItem('t') as HTMLInputElement).value = String(Date.now() - started);
+          btn.disabled = true; status.textContent = '发送中…';
+          try {
+            const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json.ok) { status.textContent = '已发送，谢谢！'; status.classList.add('ok'); form.reset(); }
+            else { status.textContent = json.error || '发送失败，请稍后再试'; status.classList.add('err'); }
+          } catch { status.textContent = '网络错误，请稍后再试'; status.classList.add('err'); }
+          btn.disabled = false;
+        });
+      });
+    </script>
+  </body>
+</html>

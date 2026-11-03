@@ -1,0 +1,14 @@
+{
+  "title": "JinJian's Gallery",
+  "siteUrl": "https://www.jinjian.net",
+  "language": "zh-CN",
+  "contactBackground": "home/jinjian04.jpg",
+  "downloadOriginal": true,
+  "social": {
+    "facebook": "",
+    "twitter": "",
+    "instagram": "",
+    "weibo": "",
+    "email": "mailto:you@example.com"
+  }
+}

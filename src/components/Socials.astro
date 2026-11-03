@@ -1,0 +1,13 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../lib/data';
+const order = ['facebook', 'twitter', 'instagram', 'weibo', 'email'];
+const items = order.filter((k) => site.social?.[k]).map((k) => ({ k, href: site.social![k] }));
+---
+{items.length > 0 && (
+  <div class="socials">
+    {items.map(({ k, href }) => (
+      <a href={href} aria-label={k} target={k === 'email' ? undefined : '_blank'} rel="noopener noreferrer"><Icon name={k} size={20} /></a>
+    ))}
+  </div>
+)}

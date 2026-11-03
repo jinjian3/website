@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import ContactForm from '../components/ContactForm.astro';
+import Socials from '../components/Socials.astro';
+import { site, url, home } from '../lib/data';
+const bg = home.slides.find((s) => s.src.includes((site.contactBackground ?? '').split('/').pop()!.replace(/\.[^.]+$/, '').toLowerCase())) ?? home.slides[home.slides.length - 1];
+---
+<Base title="Contact" mode="contact" section="contact" description="给我发邮件">
+  <div class="contact-bg">{bg && <img src={url(bg.src)} alt="" />}</div>
+  <main class="contact-stage">
+    <div class="contact-card">
+      <h1>Contact</h1>
+      <ContactForm id="page" />
+      <Socials />
+    </div>
+  </main>
+</Base>

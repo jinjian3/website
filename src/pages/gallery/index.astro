@@ -1,0 +1,18 @@
+---
+import Base from '../../layouts/Base.astro';
+import { galleries, url } from '../../lib/data';
+---
+<Base title="Gallery" section="gallery" description="所有旅行相册">
+  <main class="page">
+    <div class="page-head"><h1 class="page-title">Gallery</h1></div>
+    <div class="trips">
+      {galleries.map((g) => (
+        <a class="trip" href={url(`gallery/${g.slug}/`)}>
+          {g.photos[0] && <img src={url(g.photos[0].thumb)} width={g.photos[0].w} height={g.photos[0].h} alt="" loading="lazy" />}
+          <h2>{g.title}</h2>
+          <p>{g.photos.length} photos</p>
+        </a>
+      ))}
+    </div>
+  </main>
+</Base>

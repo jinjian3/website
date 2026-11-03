@@ -1,0 +1,114 @@
+---
+import Base from '../../layouts/Base.astro';
+import { galleries, neighbours, url, fixHtml, site } from '../../lib/data';
+export function getStaticPaths() {
+  return galleries.map((g) => ({ params: { slug: g.slug }, props: { g } }));
+}
+const { g } = Astro.props;
+const { prev, next } = neighbours(galleries, g.slug);
+const canDownload = site.downloadOriginal !== false;
+---
+<Base
+  title={g.title} section="gallery" current={g.slug} share
+  description={g.description || `${g.title} · ${g.photos.length} photos`}
+  ogImage={g.photos[0]?.thumb}
+  prev={prev && { href: url(`gallery/${prev.slug}/`), label: prev.title }}
+  next={next && { href: url(`gallery/${next.slug}/`), label: next.title }}
+>
+  <main class="page">
+    <div class="page-head">
+      <h1 class="page-title">{g.title}</h1>
+      {g.description && <p class="page-desc">{g.description}</p>}
+    </div>
+    {g.bodyHtml && <div class="page-body" set:html={fixHtml(g.bodyHtml)} />}
+    <div class="wall" id="wall" data-download={canDownload ? '1' : ''}>
+      {g.photos.map((p) => (
+        <a
+          href={url(p.large)} data-pswp-width={p.w} data-pswp-height={p.h}
+          data-caption={p.caption} data-orig={url(p.orig)} data-name={p.name}
+        >
+          <img src={url(p.thumb)} width={p.w} height={p.h} alt={p.caption} loading="lazy" decoding="async" />
+        </a>
+      ))}
+    </div>
+  </main>
+
+  <script>
+    import PhotoSwipe from 'photoswipe';
+    import PhotoSwipeLightbox from 'photoswipe/lightbox';
+    import 'photoswipe/style.css';
+
+    const wall = document.getElementById('wall')!;
+    const canDownload = !!wall.dataset.download;
+    const svg = (d: string) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="${d}"/></svg>`;
+    const ICON = {
+      play: 'M8 5v14l11-7z', pause: 'M6 5h4v14H6zm8 0h4v14h-4z',
+      download: 'M11 3h2v9.2l3.3-3.3 1.4 1.4L12 16l-5.7-5.7 1.4-1.4 3.3 3.3zM5 18h14v2H5z',
+      full: 'M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z',
+      share: 'M14 4v4.5C8 9.3 4.7 12.6 4 19c2.4-3.4 5.4-4.8 10-4.9V19l7-7.5z',
+    };
+
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: '#wall', children: 'a', pswpModule: PhotoSwipe,
+      bgOpacity: 0.97, showHideAnimationType: 'zoom', preload: [1, 2],
+      wheelToZoom: false, paddingFn: (vp) => (vp.x < 700 ? { top: 56, bottom: 56, left: 0, right: 0 } : { top: 70, bottom: 80, left: 60, right: 60 }), closeTitle: '关闭', zoomTitle: '缩放', arrowPrevTitle: '上一张', arrowNextTitle: '下一张',
+    });
+
+    lightbox.on('uiRegister', () => {
+      const ui = lightbox.pswp!.ui!;
+      let timer: number | undefined;
+      const stop = (btn?: HTMLElement) => { clearInterval(timer); timer = undefined; if (btn) btn.innerHTML = svg(ICON.play); };
+
+      ui.registerElement({
+        name: 'play-button', order: 6, isButton: true, html: svg(ICON.play), title: '自动播放',
+        onClick: (_e, el) => {
+          const pswp = lightbox.pswp!;
+          if (timer) { stop(el); return; }
+          el.innerHTML = svg(ICON.pause);
+          timer = window.setInterval(() => pswp.next(), 4000);
+        },
+        onInit: (el, pswp) => { pswp.on('close', () => stop(el)); },
+      });
+      ui.registerElement({
+        name: 'fullscreen-button', order: 6.5 as any, isButton: true, html: svg(ICON.full), title: '全屏',
+        onClick: () => {
+          const root = lightbox.pswp!.element!;
+          if (document.fullscreenElement) document.exitFullscreen();
+          else root.requestFullscreen?.().catch(() => {});
+        },
+      });
+      ui.registerElement({
+        name: 'share-button', order: 8, isButton: true, html: svg(ICON.share), title: '分享',
+        onClick: async () => {
+          try {
+            if (navigator.share) await navigator.share({ title: document.title, url: location.href });
+            else { await navigator.clipboard.writeText(location.href); (window as any).toast?.('链接已复制'); }
+          } catch {}
+        },
+      });
+      if (canDownload) {
+        ui.registerElement({
+          name: 'download-button', order: 7, isButton: true, html: svg(ICON.download), title: '下载原图',
+          onClick: () => {
+            const d = lightbox.pswp!.currSlide?.data.element as HTMLElement | undefined;
+            if (!d) return;
+            const a = document.createElement('a');
+            a.href = d.dataset.orig!; a.download = d.dataset.name || '';
+            document.body.appendChild(a); a.click(); a.remove();
+          },
+        });
+      }
+      ui.registerElement({
+        name: 'caption', order: 9, appendTo: 'root',
+        onInit: (el, pswp) => {
+          el.className = 'pswp-caption';
+          pswp.on('change', () => { el.textContent = (pswp.currSlide?.data.element as HTMLElement | undefined)?.dataset.caption || ''; });
+        },
+      });
+    });
+
+    // 缩略图含 <img>，让缩放动画从缩略图展开
+    lightbox.addFilter('thumbEl', (el, data) => data.element?.querySelector('img') ?? el);
+    lightbox.init();
+  </script>
+</Base>

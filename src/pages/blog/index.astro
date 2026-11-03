@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import { posts, url } from '../../lib/data';
+const sorted = [...posts].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+---
+<Base title="Blog" section="blog" description="文章列表">
+  <main class="page">
+    <div class="page-head"><h1 class="page-title">Blog</h1></div>
+    <ul class="post-list">
+      {sorted.map((p) => (
+        <li><a href={url(`blog/${p.slug}/`)}><span>{p.title}</span>{p.date && <time>{p.date}</time>}</a></li>
+      ))}
+    </ul>
+  </main>
+</Base>

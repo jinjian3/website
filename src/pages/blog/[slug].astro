@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro';
+import { posts, neighbours, url, fixHtml } from '../../lib/data';
+export function getStaticPaths() {
+  return posts.map((p) => ({ params: { slug: p.slug }, props: { p } }));
+}
+const { p } = Astro.props;
+const { prev, next } = neighbours(posts, p.slug);
+const desc = p.html.replace(/<[^>]+>/g, '').slice(0, 140);
+---
+<Base
+  title={p.title} section="blog" current={p.slug} share description={desc}
+  prev={prev && { href: url(`blog/${prev.slug}/`), label: prev.title }}
+  next={next && { href: url(`blog/${next.slug}/`), label: next.title }}
+>
+  <main class="page">
+    <article class="post">
+      <div class="page-head"><h1 class="page-title">{p.title}</h1></div>
+      {p.date && <div class="post-meta">{p.date}</div>}
+      <div class="prose" set:html={fixHtml(p.html)} />
+    </article>
+  </main>
+</Base>

@@ -1,0 +1,13 @@
+---
+import { url } from '../lib/data';
+const { id = 'cf' } = Astro.props;
+---
+<form class="contact-form" method="post" action={url('contact.php')} data-contact novalidate>
+  <input type="text" name="name" id={`${id}-name`} placeholder="Name" aria-label="Name" required maxlength="80" autocomplete="name" />
+  <input type="email" name="email" id={`${id}-email`} placeholder="Email" aria-label="Email" required maxlength="120" autocomplete="email" />
+  <textarea name="message" id={`${id}-msg`} placeholder="What's up?" aria-label="Message" required maxlength="4000" rows="4"></textarea>
+  <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+  <input type="hidden" name="t" value="" />
+  <button type="submit">Send</button>
+  <p class="form-status" role="status" aria-live="polite"></p>
+</form>
