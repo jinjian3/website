@@ -6,7 +6,7 @@ export interface Post { slug: string; dir: string; title: string; date: string; 
 
 export const site = manifest.site as {
   title: string; siteUrl?: string; language?: string; contactBackground?: string;
-  downloadOriginal?: boolean; social?: Record<string, string>;
+  downloadOriginal?: boolean; contactIntro?: string; social?: Record<string, string>;
 };
 export const home = manifest.home as { slides: { src: string; w: number; h: number }[]; intro: { title: string; html: string } };
 export const galleries = manifest.galleries as Gallery[];

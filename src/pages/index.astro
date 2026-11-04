@@ -11,6 +11,8 @@ const { slides, intro } = home;
         <img src={url(s.src)} width={s.w} height={s.h} alt="" loading={i === 0 ? 'eager' : 'lazy'} fetchpriority={i === 0 ? 'high' : 'auto'} />
       </div>
     ))}
+    {slides.length > 1 && <button class="hero-arrow prev" aria-label="上一张" data-prev><Icon name="left" size={22} /></button>}
+    {slides.length > 1 && <button class="hero-arrow next" aria-label="下一张" data-next><Icon name="right" size={22} /></button>}
     <div class="hero-bar"></div>
     <button class="hero-down" aria-label="向下" data-down><Icon name="down" size={26} /></button>
   </section>
@@ -34,10 +36,21 @@ const { slides, intro } = home;
     };
     if (slides.length > 1) {
       let timer = window.setInterval(() => show(i + 1), interval);
+      const restart = () => { clearInterval(timer); timer = window.setInterval(() => show(i + 1), interval); };
       document.addEventListener('visibilitychange', () => {
         clearInterval(timer);
-        if (!document.hidden) { timer = window.setInterval(() => show(i + 1), interval); runBar(); }
+        if (!document.hidden) { restart(); runBar(); }
       });
+      const go = (n: number) => { show(n); restart(); };
+      hero.querySelector('[data-prev]')?.addEventListener('click', () => go(i - 1));
+      hero.querySelector('[data-next]')?.addEventListener('click', () => go(i + 1));
+      // 手指左右滑动切换
+      let x0 = 0, y0 = 0;
+      hero.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+      hero.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? i + 1 : i - 1);
+      }, { passive: true });
     }
     runBar();
     document.querySelector('[data-down]')?.addEventListener('click', () => document.getElementById('intro')?.scrollIntoView({ behavior: 'smooth' }));

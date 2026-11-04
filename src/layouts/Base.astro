@@ -13,10 +13,9 @@ interface Props {
   current?: string;       // 当前相册/文章 slug，用于高亮子菜单
   prev?: { href: string; label: string } | null;
   next?: { href: string; label: string } | null;
-  share?: boolean;
   ogImage?: string;
 }
-const { title, description = '', mode = 'page', section, current, prev = null, next = null, share = false, ogImage } = Astro.props;
+const { title, description = '', mode = 'page', section, current, prev = null, next = null, ogImage } = Astro.props;
 const pageTitle = title ? `${title} · ${site.title}` : site.title;
 const lang = site.language ?? 'zh-CN';
 ---
@@ -34,9 +33,26 @@ const lang = site.language ?? 'zh-CN';
     <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
   </head>
   <body class={`is-${mode}`}>
+    <button class="nav-toggle" aria-label="菜单" aria-expanded="false" data-nav-toggle>
+      <span class="i-menu"><Icon name="menu" size={30} /></span><span class="i-close"><Icon name="close" size={28} /></span>
+    </button>
+    <aside class="mobile-menu" aria-label="手机菜单">
+      <ul>
+        <li class:list={[section === 'home' && 'active']}><a href={url()}>Home</a></li>
+        <li class:list={['has-sub', section === 'gallery' && 'open']}>
+          <a href={url('gallery/')} data-acc>Gallery</a>
+          <ul class="msub">{galleries.map((g) => <li class:list={[current === g.slug && section === 'gallery' && 'current']}><a href={url(`gallery/${g.slug}/`)}>{g.title}</a></li>)}</ul>
+        </li>
+        <li class:list={['has-sub', section === 'blog' && 'open']}>
+          <a href={url('blog/')} data-acc>Blog</a>
+          <ul class="msub">{posts.map((p) => <li class:list={[current === p.slug && section === 'blog' && 'current']}><a href={url(`blog/${p.slug}/`)}>{p.title}</a></li>)}</ul>
+        </li>
+        <li class:list={[section === 'contact' && 'active']}><a href={url('contact/')}>Contact</a></li>
+      </ul>
+    </aside>
+    <div class="site-wrap">
     <header class="site-header">
       <a class="logo" href={url()}>{site.title}</a>
-      <button class="nav-toggle" aria-label="菜单" aria-expanded="false" data-nav-toggle><Icon name="menu" size={26} /></button>
       <div class="nav-wrap">
         <nav class="main-nav" aria-label="主菜单">
           <ul>
@@ -71,37 +87,42 @@ const lang = site.language ?? 'zh-CN';
 
     <slot />
 
-    {share && <button class="float-btn share" aria-label="分享" data-share><Icon name="share" size={22} /></button>}
     {prev && <a class="side-btn prev" href={prev.href} aria-label={prev.label} title={prev.label}><Icon name="left" size={22} /></a>}
     {next && <a class="side-btn next" href={next.href} aria-label={next.label} title={next.label}><Icon name="right" size={22} /></a>}
     {mode !== 'home' && <button class="float-btn top" aria-label="回到顶部" data-top><Icon name="up" size={22} /></button>}
-    <div class="toast" data-toast></div>
 
     <footer class="site-footer">
       <button class="to-top" aria-label="回到顶部" data-top><Icon name="up" size={20} /></button>
       <Socials />
       <p>© {new Date().getFullYear()} {site.title}</p>
     </footer>
+    </div>
+    <div class="toast" data-toast></div>
 
     <script>
       const body = document.body;
-      // 手机菜单
-      const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
-      toggle?.addEventListener('click', () => {
-        const open = body.classList.toggle('nav-open');
+      // 手机菜单：页面向左滑出，露出右侧菜单
+      const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]')!;
+      const wrap = document.querySelector<HTMLElement>('.site-wrap')!;
+      const setNav = (open: boolean) => {
+        body.classList.toggle('nav-open', open);
         toggle.setAttribute('aria-expanded', String(open));
-      });
-      // 手机上点击带子菜单的项目：第一次展开，不跳转
-      const mobile = () => window.matchMedia('(max-width: 899px)').matches;
-      document.querySelectorAll<HTMLAnchorElement>('.has-sub > a').forEach((a) => {
+      };
+      toggle.addEventListener('click', () => setNav(!body.classList.contains('nav-open')));
+      // 菜单打开时，点击左侧露出的页面 = 关闭菜单（不触发页面内的链接）
+      wrap.addEventListener('click', (e) => {
+        if (body.classList.contains('nav-open')) { e.preventDefault(); e.stopPropagation(); setNav(false); }
+      }, true);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setNav(false); });
+      window.matchMedia('(min-width: 900px)').addEventListener('change', (m) => { if (m.matches) setNav(false); });
+      // Gallery / Blog 点一下展开，再点收起（+ / −）
+      document.querySelectorAll<HTMLAnchorElement>('.mobile-menu [data-acc]').forEach((a) => {
         a.addEventListener('click', (e) => {
-          if (!mobile()) return;
+          e.preventDefault();
           const li = a.parentElement!;
-          if (!li.classList.contains('open')) {
-            e.preventDefault();
-            document.querySelectorAll('.has-sub.open').forEach((x) => x.classList.remove('open'));
-            li.classList.add('open');
-          }
+          const willOpen = !li.classList.contains('open');
+          document.querySelectorAll('.mobile-menu .has-sub.open').forEach((x) => x.classList.remove('open'));
+          if (willOpen) li.classList.add('open');
         });
       });
       // 回到顶部
@@ -118,15 +139,6 @@ const lang = site.language ?? 'zh-CN';
         toast.textContent = msg; toast.classList.add('show');
         clearTimeout(tt); tt = window.setTimeout(() => toast.classList.remove('show'), 2200);
       };
-      // 分享：优先系统分享面板，否则复制链接
-      document.querySelector('[data-share]')?.addEventListener('click', async () => {
-        const data = { title: document.title, url: location.href };
-        try {
-          if (navigator.share) { await navigator.share(data); return; }
-          await navigator.clipboard.writeText(location.href);
-          (window as any).toast('链接已复制');
-        } catch { /* 用户取消 */ }
-      });
       // 联系表单
       const started = Date.now();
       document.querySelectorAll<HTMLFormElement>('form[data-contact]').forEach((form) => {

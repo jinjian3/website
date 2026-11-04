@@ -10,7 +10,8 @@ const bg = home.slides.find((s) => s.src.includes((site.contactBackground ?? '')
   <main class="contact-stage">
     <div class="contact-card">
       <h1>Contact</h1>
-      <ContactForm id="page" />
+      <p class="contact-intro">{site.contactIntro ?? "Hey why don't you go ahead and contact me?"}</p>
+      <ContactForm id="page" placeholder="Message" />
       <Socials />
     </div>
   </main>

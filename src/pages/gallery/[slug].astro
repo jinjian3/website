@@ -9,7 +9,7 @@ const { prev, next } = neighbours(galleries, g.slug);
 const canDownload = site.downloadOriginal !== false;
 ---
 <Base
-  title={g.title} section="gallery" current={g.slug} share
+  title={g.title} section="gallery" current={g.slug}
   description={g.description || `${g.title} · ${g.photos.length} photos`}
   ogImage={g.photos[0]?.thumb}
   prev={prev && { href: url(`gallery/${prev.slug}/`), label: prev.title }}
