@@ -1,8 +1,7 @@
 name: Build Astro Site
 
 on:
-  push:
-    branches: [ main ] # 当你推送到 main 分支时自动触发构建
+  workflow_dispatch:
 
 jobs:
   build:
